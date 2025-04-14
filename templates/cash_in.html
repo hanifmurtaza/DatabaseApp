@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cash In Transactions</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>HanifDB</h2>
+    <ul>
+        <li><a href="{{ url_for('dashboard') }}">📂 Dashboard</a></li>
+        <li class="active"><a href="{{ url_for('cash_in') }}">💰 Cash In</a></li>
+        <li><a href="{{ url_for('cash_out') }}">💸 Cash Out</a></li>
+    </ul>
+</div>
+
+<div class="content">
+    <h1 class="text-success">💰 Cash In Transactions</h1>
+
+    <!-- Filters -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label for="monthFilter" class="form-label">Filter by Month</label>
+            <select id="monthFilter" class="form-select">
+                <option value="All">All Months</option>
+                {% for i in range(1, 13) %}
+                <option value="{{ '%02d' % i }}">{{ ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][i-1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="yearFilter" class="form-label">Filter by Year</label>
+            <select id="yearFilter" class="form-select">
+                <option value="All">All Years</option>
+                {% for year in available_years %}
+                <option value="{{ year }}">{{ year }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="searchInput" class="form-label">Search</label>
+            <input type="text" id="searchInput" class="form-control" placeholder="🔍 Search transactions...">
+        </div>
+    </div>
+
+    <!-- Export Button -->
+    <div class="d-flex justify-content-end mb-3">
+        <button class="btn btn-outline-info" onclick="exportFilteredData()">📥 Export Filtered Data</button>
+    </div>
+
+    <!-- Cash In Transactions Table -->
+    <div class="table-container">
+        <table class="table table-bordered table-hover">
+            <thead class="table-success">
+                <tr>
+                    <th>ID</th>
+                    <th>Document Number</th>
+                    <th>Assignment</th>
+                    <th>G/L Account</th>
+                    <th>Document Type</th>
+                    <th>Posting Period</th>
+                    <th>Posting Date</th>
+                    <th>Document Date</th>
+                    <th>Posting Key</th>
+                    <th>Jumlah (MYR)</th>
+                    <th>Tax Code</th>
+                    <th>Reference</th>
+                    <th>User Name</th>
+                    <th>Clearing Document</th>
+                    <th>Text</th>
+                    <th>File Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="invoiceTable">
+                {% for transaction in invoices %}
+                <tr data-tanggal="{{ transaction['posting_date'] }}">
+                    <td>{{ transaction["id"] }}</td>
+                    <td>{{ transaction["document_number"] }}</td>
+                    <td>{{ transaction["assignment"] }}</td>
+                    <td>{{ transaction["gl_account"] }}</td>
+                    <td>{{ transaction["document_type"] }}</td>
+                    <td>{{ transaction["posting_period"] }}</td>
+                    <td>{{ transaction["posting_date"] }}</td>
+                    <td>{{ transaction["document_date"] }}</td>
+                    <td>{{ transaction["posting_key"] }}</td>
+                    <td>{{ "{:,.2f}".format(transaction["jumlah_myr"]) }}</td>
+                    <td>{{ transaction["tax_code"] }}</td>
+                    <td>{{ transaction["reference"] }}</td>
+                    <td>{{ transaction["user_name"] }}</td>
+                    <td>{{ transaction["clearing_document"] }}</td>
+                    <td>{{ transaction["text"] }}</td>
+                    <td>{{ transaction["file_name"] }}</td>
+                    <td>
+    <a href="{{ url_for('edit_cash_in', id=transaction['id']) }}" class="btn btn-sm btn-warning">Edit</a>
+    <a href="#" onclick="confirmDelete('{{ url_for('delete_cash_in', cashin_id=transaction['id']) }}')" class="btn btn-sm btn-danger">Delete</a>
+</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="16" class="text-center">No transactions available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function applyFilters() {
+    let month = document.getElementById("monthFilter").value;
+    let year = document.getElementById("yearFilter").value;
+    let search = document.getElementById("searchInput").value.toLowerCase();
+
+    document.querySelectorAll("#invoiceTable tr").forEach(row => {
+        let date = row.getAttribute("data-tanggal") || "";
+        let invoiceYear = date.substring(0, 4);
+        let invoiceMonth = date.substring(5, 7);
+
+        let matchesMonth = (month === "All" || invoiceMonth === month);
+        let matchesYear = (year === "All" || invoiceYear === year);
+        let matchesSearch = row.textContent.toLowerCase().includes(search);
+
+        row.style.display = (matchesMonth && matchesYear && matchesSearch) ? "" : "none";
+    });
+}
+
+// Ensure the event listeners are attached AFTER the page loads
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("monthFilter").addEventListener("change", applyFilters);
+    document.getElementById("yearFilter").addEventListener("change", applyFilters);
+    document.getElementById("searchInput").addEventListener("input", applyFilters);
+});
+
+// Confirm delete action
+function confirmDelete(deleteUrl) {
+    if (confirm("Are you sure you want to delete this invoice? This action cannot be undone.")) {
+        window.location.href = deleteUrl;
+    }
+}
+
+function exportFilteredData() {
+    let tableRows = document.querySelectorAll("#invoiceTable tr");
+    let invoices = [];
+
+    tableRows.forEach(row => {
+        if (row.style.display !== "none") {
+            let columns = row.querySelectorAll("td");
+
+            let invoiceData = {
+                id: columns[0]?.textContent.trim(),
+                document_number: columns[1]?.textContent.trim(),
+                assignment: columns[2]?.textContent.trim(),
+                gl_account: columns[3]?.textContent.trim(),
+                document_type: columns[4]?.textContent.trim(),
+                posting_period: columns[5]?.textContent.trim(),
+                posting_date: columns[6]?.textContent.trim(),
+                document_date: columns[7]?.textContent.trim(),
+                posting_key: columns[8]?.textContent.trim(),
+                jumlah_myr: columns[9]?.textContent.trim(),
+                tax_code: columns[10]?.textContent.trim(),
+                reference: columns[11]?.textContent.trim(),
+                user_name: columns[12]?.textContent.trim(),
+                clearing_document: columns[13]?.textContent.trim(),
+                text: columns[14]?.textContent.trim(),
+                file_name: columns[15]?.textContent.trim()
+            };
+
+            invoices.push(invoiceData);
+        }
+    });
+
+    if (invoices.length === 0) {
+        alert("No data to export!");
+        return;
+    }
+
+    fetch("/export-excel-filtered", {
+        method: "POST",
+        body: JSON.stringify({ invoices: invoices, category: "Cash In" }),
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        let link = document.createElement("a");
+        link.href = window.URL.createObjectURL(blob);
+        link.download = "Filtered_CashIn_Report.xlsx";
+        link.click();
+    })
+    .catch(error => console.error("Error exporting:", error));
+}
+</script>
+
+
+</body>
+</html>

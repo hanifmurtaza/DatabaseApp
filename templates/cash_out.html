@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cash Out Transactions</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>HanifDB</h2>
+    <ul>
+        <li><a href="{{ url_for('dashboard') }}">📂 Dashboard</a></li>
+        <li><a href="{{ url_for('cash_in') }}">💰 Cash In</a></li>
+        <li class="active"><a href="{{ url_for('cash_out') }}">💸 Cash Out</a></li>
+    </ul>
+</div>
+
+<div class="content">
+    <h1 class="text-danger">💸 Cash Out Transactions</h1>
+
+    <!-- Filters -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label for="monthFilter" class="form-label">Filter by Month</label>
+            <select id="monthFilter" class="form-select">
+                <option value="All">All Months</option>
+                {% for i in range(1, 13) %}
+                <option value="{{ '%02d' % i }}">{{ ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][i-1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="yearFilter" class="form-label">Filter by Year</label>
+            <select id="yearFilter" class="form-select">
+                <option value="All">All Years</option>
+                {% for year in available_years %}
+                <option value="{{ year }}">{{ year }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="searchInput" class="form-label">Search</label>
+            <input type="text" id="searchInput" class="form-control" placeholder="🔍 Search invoices...">
+        </div>
+    </div>
+
+    <!-- Export Button -->
+    <div class="d-flex justify-content-end mb-3">
+        <button class="btn btn-outline-info" onclick="exportFilteredData()">📥 Export Filtered Data</button>
+    </div>
+
+    <!-- Invoice Table -->
+    <div class="table-container">
+        <table class="table table-bordered table-hover">
+            <thead class="table-primary">
+                <tr>
+                    <th>ID</th>
+                    <th>Nomor</th>
+                    <th>Tanggal</th>
+                    <th>Kepada</th>
+                    <th>Dari</th>
+                    <th>Pembayaran</th>
+                    <th>Due Date</th>
+                    <th>Vendor</th>
+                    <th>Bank</th>
+                    <th>Atas Nama</th>
+                    <th>Rekening</th>
+                    <th>Cost Center</th>
+                    <th>Cost Element</th>
+                    <th>File Name</th>
+                    <th>Jumlah (MYR)</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="invoiceTable">
+                {% for invoice in invoices %}
+                <tr data-tanggal="{{ invoice['tanggal'] }}">
+                    <td>{{ invoice["id"] }}</td>
+                    <td>{{ invoice["nomor"] }}</td>
+                    <td>{{ invoice["tanggal"] }}</td>
+                    <td>{{ invoice["kepada"] }}</td>
+                    <td>{{ invoice["dari"] }}</td>
+                    <td>{{ invoice["pembayaran"] }}</td>
+                    <td>{{ invoice["due_date"] }}</td>
+                    <td>{{ invoice["vendor"] }}</td>
+                    <td>{{ invoice["bank"] }}</td>
+                    <td>{{ invoice["atas_nama"] }}</td>
+                    <td>{{ invoice["rekening"] }}</td>
+                    <td>{{ invoice["cost_center"] }}</td>
+                    <td>{{ invoice["cost_element"] }}</td>
+                    <td><a href="{{ url_for('download_file', filename=invoice['file_name']) }}">{{ invoice["file_name"] }}</a></td>
+                    <td>{{ "{:,.2f}".format(invoice["jumlah"]) }}</td>
+                    <td>
+                        <a href="{{ url_for('edit_invoice', invoice_id=invoice['id']) }}" class="btn btn-sm btn-warning">Edit</a>
+                        <a href="#" onclick="confirmDelete('{{ url_for('delete_invoice', invoice_id=invoice['id']) }}')" class="btn btn-sm btn-danger">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// Apply filters on month, year, and search
+function applyFilters() {
+    let month = document.getElementById("monthFilter").value;
+    let year = document.getElementById("yearFilter").value;
+    let search = document.getElementById("searchInput").value.toLowerCase();
+
+    document.querySelectorAll("#invoiceTable tr").forEach(row => {
+        let date = row.getAttribute("data-tanggal") || "";
+        let invoiceYear = date.substring(0, 4);
+        let invoiceMonth = date.substring(5, 7);
+
+        let matchesMonth = month === "All" || invoiceMonth === month;
+        let matchesYear = year === "All" || invoiceYear === year;
+        let matchesSearch = row.textContent.toLowerCase().includes(search);
+
+        row.style.display = (matchesMonth && matchesYear && matchesSearch) ? "" : "none";
+    });
+}
+
+// Attach event listeners to filter elements
+document.getElementById("monthFilter").addEventListener("change", applyFilters);
+document.getElementById("yearFilter").addEventListener("change", applyFilters);
+document.getElementById("searchInput").addEventListener("input", applyFilters);
+
+// Confirm delete action
+function confirmDelete(deleteUrl) {
+    if (confirm("Are you sure you want to delete this invoice? This action cannot be undone.")) {
+        window.location.href = deleteUrl;
+    }
+}
+
+// Export only the filtered data
+function exportFilteredData() {
+    let tableRows = document.querySelectorAll("#invoiceTable tr");
+    let invoices = [];
+
+    tableRows.forEach(row => {
+        if (row.style.display !== "none") {
+            let columns = row.querySelectorAll("td");
+
+            let invoiceData = {
+                id: columns[0]?.textContent.trim(),
+                nomor: columns[1]?.textContent.trim(),
+                tanggal: columns[2]?.textContent.trim(),
+                kepada: columns[3]?.textContent.trim(),
+                dari: columns[4]?.textContent.trim(),
+                pembayaran: columns[5]?.textContent.trim(),
+                due_date: columns[6]?.textContent.trim(),
+                vendor: columns[7]?.textContent.trim(),
+                bank: columns[8]?.textContent.trim(),
+                atas_nama: columns[9]?.textContent.trim(),
+                rekening: columns[10]?.textContent.trim(),
+                cost_center: columns[11]?.textContent.trim(),
+                cost_element: columns[12]?.textContent.trim(),
+                file_name: columns[13]?.textContent.trim(),
+                jumlah: columns[14]?.textContent.trim()
+            };
+
+            invoices.push(invoiceData);
+        }
+    });
+
+    if (invoices.length === 0) {
+        alert("No data to export!");
+        return;
+    }
+
+    fetch("/export-excel-filtered", {
+        method: "POST",
+        body: JSON.stringify({ invoices: invoices, category: "Cash Out" }),
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        let link = document.createElement("a");
+        link.href = window.URL.createObjectURL(blob);
+        link.download = "Filtered_CashOut_Report.xlsx";
+        link.click();
+    })
+    .catch(error => console.error("Error exporting:", error));
+}
+</script>
+
+</body>
+</html>

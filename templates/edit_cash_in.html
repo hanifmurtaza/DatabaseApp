@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Edit Cash In</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+  <style>
+    body { background-color: #f8f9fa; }
+    .container { margin-top: 30px; max-width: 850px; }
+    .card {
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        background: #ffffff;
+    }
+    label { font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="card">
+    <h2 class="text-center text-success mb-4">Edit Cash In Transaction</h2>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label>Document Number</label>
+          <input type="text" name="document_number" class="form-control" value="{{ cash_in['document_number'] }}" required>
+        </div>
+
+        <div class="col-md-6">
+          <label>Assignment</label>
+          <input type="text" name="assignment" class="form-control" value="{{ cash_in['assignment'] }}">
+        </div>
+
+        <div class="col-md-6">
+          <label>G/L Account</label>
+          <input type="text" name="gl_account" class="form-control" value="{{ cash_in['gl_account'] }}">
+        </div>
+
+        <div class="col-md-6">
+          <label>Document Type</label>
+          <input type="text" name="document_type" class="form-control" value="{{ cash_in['document_type'] }}">
+        </div>
+
+        <div class="col-md-6">
+          <label>Posting Period</label>
+          <input type="text" name="posting_period" class="form-control" value="{{ cash_in['posting_period'] }}">
+        </div>
+
+        <div class="col-md-6">
+          <label>Posting Date</label>
+          <input type="date" name="posting_date" class="form-control" value="{{ cash_in['posting_date'] }}">
+        </div>
+
+        <div class="col-md-6">
+          <label>Document Date</label>
+          <input type="date" name="document_date" class="form-control" value="{{ cash_in['document_date'] }}">
+        </div>
+
+        <div class="col-md-6">
+          <label>Posting Key</label>
+          <input type="text" name="posting_key" class="form-control" value="{{ cash_in['posting_key'] }}">
+        </div>
+
+        <div class="col-md-6">
+          <label>Jumlah (MYR)</label>
+          <input type="number" step="0.01" name="jumlah_myr" class="form-control" value="{{ cash_in['jumlah_myr'] }}">
+        </div>
+
+        <div class="col-md-6">
+          <label>Tax Code</label>
+          <input type="text" name="tax_code" class="form-control" value="{{ cash_in['tax_code'] }}">
+        </div>
+
+        <div class="col-md-6">
+          <label>Reference</label>
+          <input type="text" name="reference" class="form-control" value="{{ cash_in['reference'] }}">
+        </div>
+
+        <div class="col-md-6">
+          <label>User Name</label>
+          <input type="text" name="user_name" class="form-control" value="{{ cash_in['user_name'] }}">
+        </div>
+
+        <div class="col-md-6">
+          <label>Clearing Document</label>
+          <input type="text" name="clearing_document" class="form-control" value="{{ cash_in['clearing_document'] }}">
+        </div>
+
+        <div class="col-md-6">
+          <label>Text</label>
+          <input type="text" name="text" class="form-control" value="{{ cash_in['text'] }}">
+        </div>
+
+        <div class="col-md-6">
+          <label>File Name</label>
+          <input type="text" name="file_name" class="form-control" value="{{ cash_in['file_name'] }}">
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between mt-4">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-success">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>
