@@ -1,6 +1,6 @@
-# HanifDB – Automated Invoice Management System
+# Automated Invoice Management System
 
-HanifDB is a lightweight, end-to-end web application that automates the extraction, storage, visualization, and export of financial invoice data for internal company use. Built with Flask and SQLite, it streamlines the process of managing SP3 Cash In (Excel) and Cash Out (PDF) invoices — from file upload to dashboard.
+a lightweight, end-to-end web application that automates the extraction, storage, visualization, and export of financial invoice data for internal company use. Built with Flask and SQLite, it streamlines the process of managing SP3 Cash In (Excel) and Cash Out (PDF) invoices — from file upload to dashboard.
 
 ## 🚀 Features
 
